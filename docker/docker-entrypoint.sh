@@ -64,7 +64,8 @@ if [ -n "$DB_SEED_URL" ]; then
     if [ "$NEED_SEED" = "true" ]; then
         log_message "Seeding database from remote URL: $DB_SEED_URL"
         mkdir -p "$DB_DIR"
-        TMP_DL="$DB_DIR/.seed.tmp"
+        # Download to a safe temp path first (always writable)
+        TMP_DL="/tmp/.seed.tmp"
         # Download with curl (already present in image)
         if ! curl -L --fail --show-error --silent "$DB_SEED_URL" -o "$TMP_DL"; then
             log_message "ERROR: Failed to download DB from DB_SEED_URL" >&2
@@ -80,8 +81,16 @@ if [ -n "$DB_SEED_URL" ]; then
                 exit 1
             fi
         fi
-        # Move into place
+        # Move into place, creating directory and fixing permissions if needed
+        mkdir -p "$DB_DIR"
+        if [ "$(id -u)" = "0" ]; then
+            # Ensure target dir owned by nodejs before move
+            chown -R nodejs:nodejs "$DB_DIR" 2>/dev/null || true
+        fi
         mv -f "$TMP_DL" "$DB_PATH"
+        if [ "$(id -u)" = "0" ]; then
+            chown nodejs:nodejs "$DB_PATH" 2>/dev/null || true
+        fi
     fi
 fi
 

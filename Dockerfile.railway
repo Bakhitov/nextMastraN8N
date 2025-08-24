@@ -63,7 +63,6 @@ LABEL org.opencontainers.image.version="2.7.13"
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \
     chown -R nodejs:nodejs /app
-USER nodejs
 
 # Set Railway-optimized environment variables
 ENV AUTH_TOKEN="REPLACE_THIS_AUTH_TOKEN_32_CHARS_MIN_abcdefgh"
