@@ -39,9 +39,8 @@ RUN npm install --production --no-audit --no-fund && \
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Copy necessary data and configuration files
-COPY data/ ./data/
-COPY data_example/ ./data_example/
+# Do not copy local data into the image; DB will be seeded via DB_SEED_URL or initialized at runtime
+# Create directories at runtime instead
 COPY src/database/schema-optimized.sql ./src/database/schema-optimized.sql
 COPY .env.example ./
 
