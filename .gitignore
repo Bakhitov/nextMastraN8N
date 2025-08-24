@@ -126,3 +126,16 @@ n8n-mcp-wrapper.sh
 
 # Package tarballs
 *.tgz
+
+# local db files
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data_example/
+
+# ignore local example db (including leading-space dir)
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data_example/
+ data_example/

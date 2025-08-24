@@ -41,6 +41,7 @@ COPY --from=builder /app/dist ./dist
 
 # Copy necessary data and configuration files
 COPY data/ ./data/
+COPY data_example/ ./data_example/
 COPY src/database/schema-optimized.sql ./src/database/schema-optimized.sql
 COPY .env.example ./
 
@@ -75,6 +76,7 @@ ENV LOG_LEVEL=info
 ENV TRUST_PROXY=1
 ENV HOST=0.0.0.0
 ENV CORS_ORIGIN="*"
+ENV FORCE_SEED_DB=true
 
 # Expose port (Railway will set PORT automatically)
 EXPOSE 3000

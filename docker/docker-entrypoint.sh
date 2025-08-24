@@ -51,6 +51,20 @@ if [ ! -d "$DB_DIR" ]; then
     fi
 fi
 
+# Seed database from example if requested or on first run
+SEED_SOURCE="/app/data_example/nodes.db"
+if [ -f "$SEED_SOURCE" ]; then
+    if [ "$FORCE_SEED_DB" = "true" ]; then
+        log_message "FORCE_SEED_DB=true: Seeding database from $SEED_SOURCE to $DB_PATH"
+        mkdir -p "$DB_DIR"
+        cp -f "$SEED_SOURCE" "$DB_PATH"
+    elif [ ! -f "$DB_PATH" ]; then
+        log_message "Seeding initial database from $SEED_SOURCE to $DB_PATH"
+        mkdir -p "$DB_DIR"
+        cp -f "$SEED_SOURCE" "$DB_PATH"
+    fi
+fi
+
 # Database initialization with file locking to prevent race conditions
 if [ ! -f "$DB_PATH" ]; then
     log_message "Database not found at $DB_PATH. Initializing..."

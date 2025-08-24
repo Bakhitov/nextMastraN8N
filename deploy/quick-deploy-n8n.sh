@@ -180,16 +180,30 @@ view_logs() {
     fi
 }
 
+# Function to sync example DB to runtime DB
+sync_example_db() {
+    print_info "Synchronizing example database..."
+    if [ -f "data_example/nodes.db" ]; then
+        mkdir -p data
+        cp -f "data_example/nodes.db" "data/nodes.db"
+        print_info "Copied data_example/nodes.db -> data/nodes.db"
+    else
+        print_warn "data_example/nodes.db not found, skipping copy"
+    fi
+}
+
 # Main script
 case "${1:-help}" in
     setup)
         check_prerequisites
         setup_environment
         build_images
+        sync_example_db
         start_services
         show_status
         ;;
     start)
+        sync_example_db
         start_services
         show_status
         ;;
@@ -198,6 +212,7 @@ case "${1:-help}" in
         ;;
     restart)
         stop_services
+        sync_example_db
         start_services
         show_status
         ;;
