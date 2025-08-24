@@ -51,6 +51,40 @@ if [ ! -d "$DB_DIR" ]; then
     fi
 fi
 
+# Optional: Seed database by downloading from URL if provided
+# This runs before local example seeding to allow out-of-repo static DB bootstrap
+if [ -n "$DB_SEED_URL" ]; then
+    NEED_SEED="false"
+    if [ "$FORCE_SEED_DB" = "true" ]; then
+        NEED_SEED="true"
+    elif [ ! -f "$DB_PATH" ]; then
+        NEED_SEED="true"
+    fi
+
+    if [ "$NEED_SEED" = "true" ]; then
+        log_message "Seeding database from remote URL: $DB_SEED_URL"
+        mkdir -p "$DB_DIR"
+        TMP_DL="$DB_DIR/.seed.tmp"
+        # Download with curl (already present in image)
+        if ! curl -L --fail --show-error --silent "$DB_SEED_URL" -o "$TMP_DL"; then
+            log_message "ERROR: Failed to download DB from DB_SEED_URL" >&2
+            rm -f "$TMP_DL" 2>/dev/null || true
+            exit 1
+        fi
+        # Verify checksum if provided
+        if [ -n "$DB_SEED_SHA256" ]; then
+            ACTUAL_HASH=$(sha256sum "$TMP_DL" | awk '{print $1}')
+            if [ "$ACTUAL_HASH" != "$DB_SEED_SHA256" ]; then
+                log_message "ERROR: SHA256 mismatch for downloaded DB (got $ACTUAL_HASH)" >&2
+                rm -f "$TMP_DL" 2>/dev/null || true
+                exit 1
+            fi
+        fi
+        # Move into place
+        mv -f "$TMP_DL" "$DB_PATH"
+    fi
+fi
+
 # Seed database from example if requested or on first run
 SEED_SOURCE="/app/data_example/nodes.db"
 if [ -f "$SEED_SOURCE" ]; then
