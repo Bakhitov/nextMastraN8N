@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756045041169,
+  "lastUpdate": 1756045882798,
   "repoUrl": "https://github.com/Bakhitov/nextMastraN8N",
   "entries": {
     "n8n-mcp Benchmarks": [
@@ -104,6 +104,58 @@ window.BENCHMARK_DATA = {
             "unit": "ms",
             "range": 0.38,
             "extra": "14885 ops/sec"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bakhitov.akhan@gmail.com",
+            "name": "Bakhitov",
+            "username": "Bakhitov"
+          },
+          "committer": {
+            "email": "bakhitov.akhan@gmail.com",
+            "name": "Bakhitov",
+            "username": "Bakhitov"
+          },
+          "distinct": true,
+          "id": "94b3d4086d13b7701620546ef1b28b32961ccba2",
+          "message": "chore(railway): remove COPY of local data dirs; rely on DB_SEED_URL + volume",
+          "timestamp": "2025-08-24T19:29:49+05:00",
+          "tree_id": "b4e2be11c42bc2b9e467fd29e7c8bedc54310fdb",
+          "url": "https://github.com/Bakhitov/nextMastraN8N/commit/94b3d4086d13b7701620546ef1b28b32961ccba2"
+        },
+        "date": 1756045882506,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "sample - array sorting - small",
+            "value": 0.0188,
+            "unit": "ms",
+            "range": 0.22810000000000002,
+            "extra": "53277 ops/sec"
+          },
+          {
+            "name": "sample - array sorting - large",
+            "value": 3.1555,
+            "unit": "ms",
+            "range": 0.6080000000000001,
+            "extra": "317 ops/sec"
+          },
+          {
+            "name": "sample - string concatenation",
+            "value": 0.0046,
+            "unit": "ms",
+            "range": 0.2823,
+            "extra": "216290 ops/sec"
+          },
+          {
+            "name": "sample - object creation",
+            "value": 0.0657,
+            "unit": "ms",
+            "range": 0.33480000000000004,
+            "extra": "15223 ops/sec"
           }
         ]
       }
