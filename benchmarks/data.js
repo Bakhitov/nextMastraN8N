@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756045882798,
+  "lastUpdate": 1756046728428,
   "repoUrl": "https://github.com/Bakhitov/nextMastraN8N",
   "entries": {
     "n8n-mcp Benchmarks": [
@@ -156,6 +156,58 @@ window.BENCHMARK_DATA = {
             "unit": "ms",
             "range": 0.33480000000000004,
             "extra": "15223 ops/sec"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bakhitov.akhan@gmail.com",
+            "name": "Bakhitov",
+            "username": "Bakhitov"
+          },
+          "committer": {
+            "email": "bakhitov.akhan@gmail.com",
+            "name": "Bakhitov",
+            "username": "Bakhitov"
+          },
+          "distinct": true,
+          "id": "fcb02703e1d31755280ec653bd78370c20c025e2",
+          "message": "fix(railway): ensure seed downloads to /tmp and root adjusts permissions; run as root for init",
+          "timestamp": "2025-08-24T19:43:56+05:00",
+          "tree_id": "a26ce96857398e32f19f18450865472dba668e56",
+          "url": "https://github.com/Bakhitov/nextMastraN8N/commit/fcb02703e1d31755280ec653bd78370c20c025e2"
+        },
+        "date": 1756046728107,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "sample - array sorting - small",
+            "value": 0.0189,
+            "unit": "ms",
+            "range": 0.28990000000000005,
+            "extra": "52903 ops/sec"
+          },
+          {
+            "name": "sample - array sorting - large",
+            "value": 3.3471,
+            "unit": "ms",
+            "range": 5.2193000000000005,
+            "extra": "299 ops/sec"
+          },
+          {
+            "name": "sample - string concatenation",
+            "value": 0.0047,
+            "unit": "ms",
+            "range": 0.2447,
+            "extra": "213837 ops/sec"
+          },
+          {
+            "name": "sample - object creation",
+            "value": 0.0665,
+            "unit": "ms",
+            "range": 0.4147,
+            "extra": "15035 ops/sec"
           }
         ]
       }
