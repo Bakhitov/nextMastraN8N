@@ -76,8 +76,9 @@ async function fetchTemplatesRobust() {
         // Fetch detail
         const detail = await fetcher.fetchTemplateDetail(template.id);
         
-        // Save immediately
-        repository.saveTemplate(template, detail);
+        // Extract categories from listing (if present) and save
+        const categories = (template as any).categories?.map((c: any) => c?.name).filter(Boolean) || [];
+        repository.saveTemplate(template, detail, categories);
         saved++;
         
         // Rate limiting

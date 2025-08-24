@@ -7,6 +7,11 @@ export interface TemplateNode {
   icon: string;
 }
 
+export interface TemplateCategory {
+  id: number;
+  name: string;
+}
+
 export interface TemplateUser {
   id: number;
   name: string;
@@ -18,10 +23,14 @@ export interface TemplateWorkflow {
   id: number;
   name: string;
   description: string;
-  totalViews: number;
+  totalViews?: number; // some responses expose `views`/`recentViews` instead
+  views?: number;
+  recentViews?: number;
   createdAt: string;
+  updatedAt?: string; // Prefer for freshness filtering when available
   user: TemplateUser;
   nodes: TemplateNode[];
+  categories?: TemplateCategory[];
 }
 
 export interface TemplateDetail {
@@ -40,11 +49,30 @@ export interface TemplateDetail {
 export class TemplateFetcher {
   private readonly baseUrl = 'https://api.n8n.io/api/templates';
   private readonly pageSize = 100;
+  private readonly maxRetries = 5;
+  private readonly baseDelayMs = 800;
+  
+  private async withRetry<T>(fn: () => Promise<T>, context: string): Promise<T> {
+    let attempt = 0;
+    let lastErr: any;
+    while (attempt < this.maxRetries) {
+      try {
+        return await fn();
+      } catch (err: any) {
+        lastErr = err;
+        attempt++;
+        const status = err?.response?.status;
+        const retriable = status === 429 || status >= 500 || status === undefined;
+        if (!retriable || attempt >= this.maxRetries) break;
+        const delay = this.baseDelayMs * Math.pow(2, attempt - 1);
+        logger.warn(`Retry ${attempt}/${this.maxRetries} after error in ${context}: ${status ?? err?.code ?? err?.message}. Waiting ${delay}ms`);
+        await new Promise(r => setTimeout(r, delay));
+      }
+    }
+    throw lastErr;
+  }
   
   async fetchTemplates(progressCallback?: (current: number, total: number) => void): Promise<TemplateWorkflow[]> {
-    const oneYearAgo = new Date();
-    oneYearAgo.setMonth(oneYearAgo.getMonth() - 12);
-    
     const allTemplates: TemplateWorkflow[] = [];
     let page = 1;
     let hasMore = true;
@@ -53,36 +81,52 @@ export class TemplateFetcher {
     
     while (hasMore) {
       try {
-        const response = await axios.get(`${this.baseUrl}/search`, {
+        const response = await this.withRetry(() => axios.get(`${this.baseUrl}/search`, {
           params: {
             page,
             rows: this.pageSize,
             sort_by: 'last-updated'
           }
-        });
+        }), `templates page ${page}`);
         
         const { workflows, totalWorkflows } = response.data;
         
-        // Filter templates by date
-        const recentTemplates = workflows.filter((w: TemplateWorkflow) => {
-          const createdDate = new Date(w.createdAt);
-          return createdDate >= oneYearAgo;
+        // Normalize categories across possible API shapes
+        const normalized = workflows.map((w: any) => {
+          const raw = w?.categories ?? w?.tags ?? w?.category;
+          let categories: TemplateCategory[] | undefined;
+          if (Array.isArray(raw)) {
+            if (raw.length > 0 && typeof raw[0] === 'string') {
+              categories = (raw as string[]).map((name, idx) => ({ id: idx, name }));
+            } else if (raw.length > 0 && typeof raw[0] === 'object') {
+              categories = (raw as any[])
+                .map((c, idx) => {
+                  const name = c?.name ?? c?.label ?? c?.title;
+                  return name ? { id: c?.id ?? idx, name } as TemplateCategory : undefined;
+                })
+                .filter(Boolean) as TemplateCategory[];
+            }
+          } else if (typeof raw === 'string') {
+            // Handle comma/semicolon separated strings
+            const parts = raw.split(/[,;]/).map(s => s.trim()).filter(Boolean);
+            categories = parts.map((name, idx) => ({ id: idx, name }));
+          }
+
+          if (categories && categories.length) {
+            w.categories = categories;
+          }
+          return w as TemplateWorkflow;
         });
         
-        // If we hit templates older than 1 year, stop fetching
-        if (recentTemplates.length < workflows.length) {
-          hasMore = false;
-          logger.info(`Reached templates older than 1 year at page ${page}`);
-        }
-        
-        allTemplates.push(...recentTemplates);
+        // Push all templates without date filtering
+        allTemplates.push(...normalized);
         
         if (progressCallback) {
-          progressCallback(allTemplates.length, Math.min(totalWorkflows, allTemplates.length + 500));
+          progressCallback(allTemplates.length, totalWorkflows ?? allTemplates.length);
         }
         
         // Check if there are more pages
-        if (workflows.length < this.pageSize || allTemplates.length >= totalWorkflows) {
+        if (workflows.length < this.pageSize || (typeof totalWorkflows === 'number' && allTemplates.length >= totalWorkflows)) {
           hasMore = false;
         }
         
@@ -98,13 +142,13 @@ export class TemplateFetcher {
       }
     }
     
-    logger.info(`Fetched ${allTemplates.length} templates from last year`);
+    logger.info(`Fetched ${allTemplates.length} templates (no date filters)`);
     return allTemplates;
   }
   
   async fetchTemplateDetail(workflowId: number): Promise<TemplateDetail> {
     try {
-      const response = await axios.get(`${this.baseUrl}/workflows/${workflowId}`);
+      const response = await this.withRetry(() => axios.get(`${this.baseUrl}/workflows/${workflowId}`), `template detail ${workflowId}`);
       return response.data.workflow;
     } catch (error) {
       logger.error(`Error fetching template detail for ${workflowId}:`, error);

@@ -120,13 +120,14 @@ export class TemplateService {
         progressCallback?.('Fetching template details', current, total);
       });
       
-      // Save to database
+      // Save to database (include categories from listing if present)
       logger.info('Saving templates to database');
       let saved = 0;
       for (const template of templates) {
         const detail = details.get(template.id);
         if (detail) {
-          this.repository.saveTemplate(template, detail);
+          const categories = (template as any).categories?.map((c: any) => c?.name).filter(Boolean) || [];
+          this.repository.saveTemplate(template, detail, categories);
           saved++;
         }
       }

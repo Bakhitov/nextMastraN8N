@@ -133,6 +133,12 @@ export class TemplateRepository {
       });
     }
     
+    // Determine updated_at using updatedAt/lastUpdated when available, fallback to createdAt
+    const updatedAt = (workflow as any).updatedAt || (workflow as any).lastUpdated || workflow.createdAt;
+
+    // Determine views with fallbacks (API may provide totalViews or views/recentViews)
+    const views = (workflow as any).totalViews ?? (workflow as any).views ?? (workflow as any).recentViews ?? 0;
+
     stmt.run(
       workflow.id,
       workflow.id,
@@ -144,9 +150,9 @@ export class TemplateRepository {
       JSON.stringify(nodeTypes),
       JSON.stringify(sanitizedWorkflow),
       JSON.stringify(categories),
-      workflow.totalViews || 0,
+      views,
       workflow.createdAt,
-      workflow.createdAt, // Using createdAt as updatedAt since API doesn't provide updatedAt
+      updatedAt,
       url
     );
   }

@@ -18,6 +18,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Node Database**: Rebuilt with 535 nodes from updated n8n packages
 - All tests passing with updated dependencies
 
+### Added
+- Added `docs/PROJECT_FUNCTIONAL_OVERVIEW_RU.md`: comprehensive Russian functional documentation covering all tools, database structure, HTTP/stdio modes, multi-session behavior, request/response formats, and diagnostic practices
+
+### Changed
+- `src/templates/template-fetcher.ts`: switched freshness filter to use updated date (`updatedAt`/`lastUpdated`) with fallback to `createdAt`.
+- `src/templates/template-repository.ts`: now stores `updated_at` using `updatedAt`/`lastUpdated` when available instead of always copying `createdAt`.
+- `src/templates/template-service.ts`: pass categories from listing response into storage.
+- `src/templates/template-fetcher.ts`: added `categories` typing for templates.
+- `src/templates/template-fetcher.ts`: added optional `views`/`recentViews` fields on listing interface.
+- `src/templates/template-repository.ts`: save views with fallback: `totalViews` → `views` → `recentViews`.
+
 ## [2.10.4] - 2025-08-12
 
 ### Updated
