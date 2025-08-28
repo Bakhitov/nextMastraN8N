@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756046728428,
+  "lastUpdate": 1756413122138,
   "repoUrl": "https://github.com/Bakhitov/nextMastraN8N",
   "entries": {
     "n8n-mcp Benchmarks": [
@@ -208,6 +208,58 @@ window.BENCHMARK_DATA = {
             "unit": "ms",
             "range": 0.4147,
             "extra": "15035 ops/sec"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bakhitov.akhan@gmail.com",
+            "name": "Bakhitov",
+            "username": "Bakhitov"
+          },
+          "committer": {
+            "email": "bakhitov.akhan@gmail.com",
+            "name": "Bakhitov",
+            "username": "Bakhitov"
+          },
+          "distinct": true,
+          "id": "ecf36e5f341ed77b42b2a27be3aed6bfd31dfb54",
+          "message": "feat(http, multi-tenant): per-session n8n config via headers (X-N8n-Url/X-N8n-Key); env fallback; sensitive log redaction; session cleanup",
+          "timestamp": "2025-08-29T01:30:33+05:00",
+          "tree_id": "19f197efdc09d13b8b60644038e807314f325af8",
+          "url": "https://github.com/Bakhitov/nextMastraN8N/commit/ecf36e5f341ed77b42b2a27be3aed6bfd31dfb54"
+        },
+        "date": 1756413121872,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "sample - array sorting - small",
+            "value": 0.0188,
+            "unit": "ms",
+            "range": 0.2683,
+            "extra": "53262 ops/sec"
+          },
+          {
+            "name": "sample - array sorting - large",
+            "value": 3.1366,
+            "unit": "ms",
+            "range": 0.4785999999999997,
+            "extra": "319 ops/sec"
+          },
+          {
+            "name": "sample - string concatenation",
+            "value": 0.0047,
+            "unit": "ms",
+            "range": 0.3131,
+            "extra": "214521 ops/sec"
+          },
+          {
+            "name": "sample - object creation",
+            "value": 0.0661,
+            "unit": "ms",
+            "range": 0.308,
+            "extra": "15135 ops/sec"
           }
         ]
       }
