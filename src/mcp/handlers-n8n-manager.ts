@@ -1,5 +1,6 @@
 import { N8nApiClient } from '../services/n8n-api-client';
 import { getN8nApiConfig } from '../config/n8n-api';
+import { getRequestContext } from '../config/runtime-context';
 import { 
   Workflow, 
   WorkflowNode, 
@@ -42,10 +43,13 @@ export function getN8nApiClient(): N8nApiClient | null {
   }
   
   // Check if config has changed
-  if (!apiClient || lastConfigUrl !== config.baseUrl) {
-    logger.info('n8n API client initialized', { url: config.baseUrl });
+  // Recreate client if baseUrl changed OR context session changed (to isolate per-tenant state)
+  const currentCtx = getRequestContext();
+  const contextKey = `${config.baseUrl}::${currentCtx?.sessionId || 'env'}`;
+  if (!apiClient || lastConfigUrl !== contextKey) {
+    logger.info('n8n API client initialized', { url: config.baseUrl, session: currentCtx?.sessionId ? 'per-session' : 'env' });
     apiClient = new N8nApiClient(config);
-    lastConfigUrl = config.baseUrl;
+    lastConfigUrl = contextKey;
   }
   
   return apiClient;

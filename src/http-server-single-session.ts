@@ -21,6 +21,7 @@ import {
   logProtocolNegotiation,
   STANDARD_PROTOCOL_VERSION 
 } from './utils/protocol-version';
+import { runWithRequestContext, setSessionN8nConfig, clearSessionN8nConfig } from './config/runtime-context';
 
 dotenv.config();
 
@@ -129,6 +130,8 @@ export class SingleSessionHTTPServer {
       // Remove server and metadata
       delete this.servers[sessionId];
       delete this.sessionMetadata[sessionId];
+      // Clear per-session n8n config
+      clearSessionN8nConfig(sessionId);
       
       logger.info('Session removed', { sessionId, reason });
     } catch (error) {
@@ -979,7 +982,20 @@ export class SingleSessionHTTPServer {
         sessionInitialized: this.session?.initialized
       });
       
-      await this.handleRequest(req, res);
+      // Extract optional per-client n8n config headers (do not log sensitive values)
+      const n8nUrlHeader = req.header('X-N8n-Url') || req.header('x-n8n-url');
+      const n8nKeyHeader = req.header('X-N8n-Key') || req.header('x-n8n-key');
+
+      const currentSessionId = (req.headers['mcp-session-id'] as string | undefined) || this.session?.sessionId;
+      await runWithRequestContext({ sessionId: currentSessionId }, async () => {
+        if (currentSessionId && n8nUrlHeader && n8nKeyHeader) {
+          setSessionN8nConfig(currentSessionId, {
+            baseUrl: n8nUrlHeader,
+            apiKey: n8nKeyHeader,
+          });
+        }
+        await this.handleRequest(req, res);
+      });
       
       logger.info('POST /mcp request completed - checking response status', {
         responseHeadersSent: res.headersSent,

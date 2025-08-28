@@ -79,16 +79,42 @@ export class Logger {
         return;
       }
       
+      // Redact sensitive tokens/headers in meta objects
+      const sanitizedArgs = args.map((arg) => this.sanitize(arg));
+
       switch (level) {
         case LogLevel.ERROR:
-          console.error(formattedMessage, ...args);
+          console.error(formattedMessage, ...sanitizedArgs);
           break;
         case LogLevel.WARN:
-          console.warn(formattedMessage, ...args);
+          console.warn(formattedMessage, ...sanitizedArgs);
           break;
         default:
-          console.log(formattedMessage, ...args);
+          console.log(formattedMessage, ...sanitizedArgs);
       }
+    }
+  }
+
+  private sanitize(meta: any): any {
+    try {
+      if (!meta || typeof meta !== 'object') return meta;
+      const clone = Array.isArray(meta) ? meta.map((v) => this.sanitize(v)) : { ...meta };
+      const redact = (obj: any) => {
+        if (!obj || typeof obj !== 'object') return;
+        const keys = Object.keys(obj);
+        for (const k of keys) {
+          const lower = k.toLowerCase();
+          if (lower === 'authorization' || lower === 'x-n8n-key' || lower === 'n8n_api_key' || lower.includes('token')) {
+            obj[k] = '***redacted***';
+          } else if (typeof obj[k] === 'object') {
+            redact(obj[k]);
+          }
+        }
+      };
+      redact(clone);
+      return clone;
+    } catch {
+      return meta;
     }
   }
 
