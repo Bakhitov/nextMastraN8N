@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756413122138,
+  "lastUpdate": 1756468948497,
   "repoUrl": "https://github.com/Bakhitov/nextMastraN8N",
   "entries": {
     "n8n-mcp Benchmarks": [
@@ -260,6 +260,58 @@ window.BENCHMARK_DATA = {
             "unit": "ms",
             "range": 0.308,
             "extra": "15135 ops/sec"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bakhitov.akhan@gmail.com",
+            "name": "Bakhitov",
+            "username": "Bakhitov"
+          },
+          "committer": {
+            "email": "bakhitov.akhan@gmail.com",
+            "name": "Bakhitov",
+            "username": "Bakhitov"
+          },
+          "distinct": true,
+          "id": "e96c36683fea82f923a4a604130bdea0704b45be",
+          "message": "feat(mcp): add workflow activation and management tools for credentials, tags, variables, source control; improve list_nodes defaults; structuredContent handling; n8n-friendly docs updates",
+          "timestamp": "2025-08-29T17:00:45+05:00",
+          "tree_id": "a107b166f5b54eb0212a4eb769f0962f7bea738a",
+          "url": "https://github.com/Bakhitov/nextMastraN8N/commit/e96c36683fea82f923a4a604130bdea0704b45be"
+        },
+        "date": 1756468948135,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "sample - array sorting - small",
+            "value": 0.0188,
+            "unit": "ms",
+            "range": 0.32539999999999997,
+            "extra": "53087 ops/sec"
+          },
+          {
+            "name": "sample - array sorting - large",
+            "value": 3.1788,
+            "unit": "ms",
+            "range": 0.8151999999999999,
+            "extra": "315 ops/sec"
+          },
+          {
+            "name": "sample - string concatenation",
+            "value": 0.0047,
+            "unit": "ms",
+            "range": 0.29760000000000003,
+            "extra": "212468 ops/sec"
+          },
+          {
+            "name": "sample - object creation",
+            "value": 0.0688,
+            "unit": "ms",
+            "range": 0.3678,
+            "extra": "14542 ops/sec"
           }
         ]
       }
