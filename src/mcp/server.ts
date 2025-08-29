@@ -306,10 +306,15 @@ export class N8NDocumentationMCPServer {
         let structuredContent: any = null;
         
         try {
-          // For validation tools, check if we should use structured content
-          if (name.startsWith('validate_') && typeof result === 'object' && result !== null) {
-            // Clean up the result to ensure it matches the outputSchema
-            const cleanResult = this.sanitizeValidationResult(result, name);
+          // If tool declares outputSchema (currently validate_* and future tools), prefer structuredContent
+          const allTools = [...n8nDocumentationToolsFinal, ...n8nManagementTools];
+          const toolDef = allTools.find(t => t.name === name);
+          const hasOutputSchema = !!toolDef && !!toolDef.outputSchema;
+          const isValidationTool = name.startsWith('validate_');
+
+          if ((isValidationTool || hasOutputSchema) && typeof result === 'object' && result !== null) {
+            // Clean/normalize known validation outputs; otherwise pass through as-is
+            const cleanResult = isValidationTool ? this.sanitizeValidationResult(result, name) : JSON.parse(JSON.stringify(result));
             structuredContent = cleanResult;
             responseText = JSON.stringify(cleanResult, null, 2);
           } else {
@@ -338,8 +343,13 @@ export class N8NDocumentationMCPServer {
         };
         
         // For tools with outputSchema, structuredContent is REQUIRED by MCP spec
-        if (name.startsWith('validate_') && structuredContent !== null) {
-          mcpResponse.structuredContent = structuredContent;
+        if (structuredContent !== null) {
+          // Only attach structuredContent when tool declares outputSchema
+          const allTools = [...n8nDocumentationToolsFinal, ...n8nManagementTools];
+          const toolDef = allTools.find(t => t.name === name);
+          if (toolDef && toolDef.outputSchema) {
+            mcpResponse.structuredContent = structuredContent;
+          }
         }
         
         return mcpResponse;
@@ -769,6 +779,9 @@ export class N8NDocumentationMCPServer {
       case 'n8n_update_full_workflow':
         this.validateToolParams(name, args, ['id']);
         return n8nHandlers.handleUpdateWorkflow(args);
+      case 'n8n_set_workflow_active':
+        this.validateToolParams(name, args, ['id', 'active']);
+        return n8nHandlers.handleSetWorkflowActive(args);
       case 'n8n_update_partial_workflow':
         this.validateToolParams(name, args, ['id', 'operations']);
         return handleUpdatePartialWorkflow(args);
@@ -795,6 +808,49 @@ export class N8NDocumentationMCPServer {
       case 'n8n_delete_execution':
         this.validateToolParams(name, args, ['id']);
         return n8nHandlers.handleDeleteExecution(args);
+      case 'n8n_list_credentials':
+        return n8nHandlers.handleListCredentials(args);
+      case 'n8n_get_credential':
+        this.validateToolParams(name, args, ['id']);
+        return n8nHandlers.handleGetCredential(args);
+      case 'n8n_create_credential':
+        this.validateToolParams(name, args, ['name', 'type']);
+        return n8nHandlers.handleCreateCredential(args);
+      case 'n8n_update_credential':
+        this.validateToolParams(name, args, ['id']);
+        return n8nHandlers.handleUpdateCredential(args);
+      case 'n8n_delete_credential':
+        this.validateToolParams(name, args, ['id']);
+        return n8nHandlers.handleDeleteCredential(args);
+      case 'n8n_list_tags':
+        return n8nHandlers.handleListTags(args);
+      case 'n8n_create_tag':
+        this.validateToolParams(name, args, ['name']);
+        return n8nHandlers.handleCreateTag(args);
+      case 'n8n_update_tag':
+        this.validateToolParams(name, args, ['id', 'name']);
+        return n8nHandlers.handleUpdateTag(args);
+      case 'n8n_delete_tag':
+        this.validateToolParams(name, args, ['id']);
+        return n8nHandlers.handleDeleteTag(args);
+      case 'n8n_list_variables':
+        return n8nHandlers.handleListVariables();
+      case 'n8n_create_variable':
+        this.validateToolParams(name, args, ['key', 'value']);
+        return n8nHandlers.handleCreateVariable(args);
+      case 'n8n_update_variable':
+        this.validateToolParams(name, args, ['id', 'value']);
+        return n8nHandlers.handleUpdateVariable(args);
+      case 'n8n_delete_variable':
+        this.validateToolParams(name, args, ['id']);
+        return n8nHandlers.handleDeleteVariable(args);
+      case 'n8n_source_control_status':
+        return n8nHandlers.handleSourceControlStatus();
+      case 'n8n_source_control_pull':
+        return n8nHandlers.handleSourceControlPull(args);
+      case 'n8n_source_control_push':
+        this.validateToolParams(name, args, ['message']);
+        return n8nHandlers.handleSourceControlPush(args);
       case 'n8n_health_check':
         // No required parameters
         return n8nHandlers.handleHealthCheck();
@@ -816,6 +872,9 @@ export class N8NDocumentationMCPServer {
     let query = 'SELECT * FROM nodes WHERE 1=1';
     const params: any[] = [];
     
+    // Normalize and defaults
+    const effectiveLimit = filters.limit !== undefined ? Number(filters.limit) || 50 : 50;
+    
     // console.log('DEBUG list_nodes:', { filters, query, params }); // Removed to prevent stdout interference
 
     if (filters.package) {
@@ -830,8 +889,14 @@ export class N8NDocumentationMCPServer {
     }
 
     if (filters.category) {
-      query += ' AND category = ?';
-      params.push(filters.category);
+      // Special alias: category "AI" means is_ai_tool = 1
+      if (String(filters.category).toUpperCase() === 'AI') {
+        query += ' AND is_ai_tool = ?';
+        params.push(1);
+      } else {
+        query += ' AND category = ?';
+        params.push(filters.category);
+      }
     }
 
     if (filters.developmentStyle) {
@@ -845,11 +910,9 @@ export class N8NDocumentationMCPServer {
     }
 
     query += ' ORDER BY display_name';
-
-    if (filters.limit) {
-      query += ' LIMIT ?';
-      params.push(filters.limit);
-    }
+    // Always apply a LIMIT to avoid excessive payloads; default to 50
+    query += ' LIMIT ?';
+    params.push(effectiveLimit);
 
     const nodes = this.db!.prepare(query).all(...params) as NodeRow[];
     
@@ -2304,7 +2367,10 @@ Full documentation is being prepared. For now, use get_node_essentials for confi
     await this.ensureInitialized();
     if (!this.templateService) throw new Error('Template service not initialized');
     
-    const templates = await this.templateService.listNodeTemplates(nodeTypes, limit);
+    // Normalize inputs: allow string for nodeTypes and coerce limit to number
+    const normalizedNodeTypes = Array.isArray(nodeTypes) ? nodeTypes : (typeof nodeTypes === 'string' && nodeTypes ? [nodeTypes] : []);
+    const effectiveLimit = Number(limit) || 10;
+    const templates = await this.templateService.listNodeTemplates(normalizedNodeTypes, effectiveLimit);
     
     if (templates.length === 0) {
       return {

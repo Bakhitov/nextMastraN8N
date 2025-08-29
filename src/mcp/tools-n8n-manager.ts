@@ -69,6 +69,18 @@ export const n8nManagementTools: ToolDefinition[] = [
     }
   },
   {
+    name: 'n8n_set_workflow_active',
+    description: `Activate or deactivate a workflow by ID. Useful to enable/disable automations without editing nodes.`,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'Workflow ID' },
+        active: { type: 'boolean', description: 'true to activate, false to deactivate' }
+      },
+      required: ['id', 'active']
+    }
+  },
+  {
     name: 'n8n_get_workflow',
     description: `Get a workflow by ID. Returns the complete workflow including nodes, connections, and settings.`,
     inputSchema: {
@@ -81,6 +93,130 @@ export const n8nManagementTools: ToolDefinition[] = [
       },
       required: ['id']
     }
+  },
+
+  // Credentials (available on all editions)
+  {
+    name: 'n8n_list_credentials',
+    description: `List credentials (name/type/ids). Supports pagination.`,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        limit: { type: 'number', description: 'Max items to return (optional)' },
+        cursor: { type: 'string', description: 'Pagination cursor (optional)' }
+      }
+    }
+  },
+  {
+    name: 'n8n_get_credential',
+    description: `Get credential by ID. Returns name, type, metadata.`,
+    inputSchema: {
+      type: 'object',
+      properties: { id: { type: 'string', description: 'Credential ID' } },
+      required: ['id']
+    }
+  },
+  {
+    name: 'n8n_create_credential',
+    description: `Create a new credential. Note: avoid sending secrets via MCP unless environment is secure.`,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Human-readable credential name' },
+        type: { type: 'string', description: 'Credential type (e.g., apiKey, slackOAuth2)' },
+        data: { type: 'object', description: 'Credential fields (key/secret/etc.)' },
+        nodesAccess: {
+          type: 'array',
+          description: 'Optional node access restrictions',
+          items: { type: 'object', properties: { nodeType: { type: 'string' } } }
+        }
+      },
+      required: ['name', 'type']
+    }
+  },
+  {
+    name: 'n8n_update_credential',
+    description: `Update an existing credential by ID.`,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'Credential ID' },
+        name: { type: 'string' },
+        type: { type: 'string' },
+        data: { type: 'object' },
+        nodesAccess: {
+          type: 'array',
+          items: { type: 'object', properties: { nodeType: { type: 'string' } } }
+        }
+      },
+      required: ['id']
+    }
+  },
+  {
+    name: 'n8n_delete_credential',
+    description: `Delete a credential by ID.`,
+    inputSchema: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] }
+  },
+
+  // Tags (Pro/Enterprise)
+  {
+    name: 'n8n_list_tags',
+    description: `List tags (Pro/Enterprise).`,
+    inputSchema: { type: 'object', properties: { limit: { type: 'number' }, cursor: { type: 'string' }, withUsageCount: { type: 'boolean' } } }
+  },
+  {
+    name: 'n8n_create_tag',
+    description: `Create tag (Pro/Enterprise).`,
+    inputSchema: { type: 'object', properties: { name: { type: 'string' } }, required: ['name'] }
+  },
+  {
+    name: 'n8n_update_tag',
+    description: `Update tag (Pro/Enterprise).`,
+    inputSchema: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' } }, required: ['id', 'name'] }
+  },
+  {
+    name: 'n8n_delete_tag',
+    description: `Delete tag (Pro/Enterprise).`,
+    inputSchema: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] }
+  },
+
+  // Variables (Pro/Enterprise)
+  {
+    name: 'n8n_list_variables',
+    description: `List variables (Pro/Enterprise).`,
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'n8n_create_variable',
+    description: `Create variable (Pro/Enterprise).`,
+    inputSchema: { type: 'object', properties: { key: { type: 'string' }, value: { type: 'string' } }, required: ['key', 'value'] }
+  },
+  {
+    name: 'n8n_update_variable',
+    description: `Update variable (Pro/Enterprise).`,
+    inputSchema: { type: 'object', properties: { id: { type: 'string' }, value: { type: 'string' } }, required: ['id', 'value'] }
+  },
+  {
+    name: 'n8n_delete_variable',
+    description: `Delete variable (Pro/Enterprise).`,
+    inputSchema: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] }
+  },
+
+  // Source Control (Pro/Enterprise)
+  {
+    name: 'n8n_source_control_status',
+    description: `Get source control status (Pro/Enterprise).`,
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'n8n_source_control_pull',
+    description: `Pull latest from remote (Pro/Enterprise).`,
+    inputSchema: { type: 'object', properties: { force: { type: 'boolean' } } }
+  },
+  {
+    name: 'n8n_source_control_push',
+    description: `Push changes to remote (Pro/Enterprise).`,
+    inputSchema: { type: 'object', properties: { message: { type: 'string' }, fileNames: { type: 'array', items: { type: 'string' } } }, required: ['message'] }
   },
   {
     name: 'n8n_get_workflow_details',

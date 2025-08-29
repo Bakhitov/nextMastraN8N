@@ -161,6 +161,26 @@ export class N8nApiClient {
     }
   }
 
+  async setWorkflowActive(id: string, active: boolean): Promise<{ id: string; active: boolean }> {
+    try {
+      // Use dedicated activate/deactivate endpoints when available
+      const endpoint = active ? `/workflows/${id}/activate` : `/workflows/${id}/deactivate`;
+      try {
+        const response = await this.client.post(endpoint, {});
+        return { id, active };
+      } catch (postError: any) {
+        // Fallback: some instances may use PATCH with { active }
+        if (postError.response?.status === 404 || postError.response?.status === 405) {
+          const response = await this.client.patch(`/workflows/${id}`, { active });
+          return { id, active: response.data?.active ?? active };
+        }
+        throw postError;
+      }
+    } catch (error) {
+      throw handleN8nApiError(error);
+    }
+  }
+
   async deleteWorkflow(id: string): Promise<void> {
     try {
       await this.client.delete(`/workflows/${id}`);
@@ -253,8 +273,17 @@ export class N8nApiClient {
   // Credential Management
   async listCredentials(params: CredentialListParams = {}): Promise<CredentialListResponse> {
     try {
-      const response = await this.client.get('/credentials', { params });
-      return response.data;
+      try {
+        const response = await this.client.get('/credentials', { params });
+        return response.data;
+      } catch (getError: any) {
+        // Newer n8n instances may require POST /credentials/list
+        if (getError.response?.status === 405) {
+          const response = await this.client.post('/credentials/list', params || {});
+          return response.data;
+        }
+        throw getError;
+      }
     } catch (error) {
       throw handleN8nApiError(error);
     }

@@ -33,10 +33,11 @@ export const n8nFriendlyDescriptions: Record<string, {
   
   // Search and info tools
   search_nodes: {
-    description: 'Search nodes. Pass query (string). Example: {"query": "webhook"}',
+    description: 'Search nodes. Pass query (string). Optional: limit (number, default 20), mode ("OR"|"AND"|"FUZZY"). Example: {"query": "webhook"}',
     params: {
       query: 'String keyword like "webhook" or "database"',
-      limit: 'Optional number, default 20'
+      limit: 'Optional number, default 20',
+      mode: 'Optional string: "OR" (default) | "AND" | "FUZZY"'
     }
   },
   
@@ -77,6 +78,101 @@ export const n8nFriendlyDescriptions: Record<string, {
       options: 'Optional object. Example: {"validateNodes": true, "profile": "runtime"}'
     }
   },
+
+  // Workflow activation
+  n8n_set_workflow_active: {
+    description: 'Activate/deactivate workflow. Example: {"id": "123", "active": true}',
+    params: {
+      id: 'String workflow ID',
+      active: 'Boolean: true to activate, false to deactivate'
+    }
+  },
+
+  // Credentials
+  n8n_list_credentials: {
+    description: 'List credentials. Example: {"limit": 50}',
+    params: {
+      limit: 'Optional number',
+      cursor: 'Optional string'
+    }
+  },
+  n8n_get_credential: {
+    description: 'Get credential by ID. Example: {"id": "abc"}',
+    params: { id: 'String credential ID' }
+  },
+  n8n_create_credential: {
+    description: 'Create credential. Example: {"name":"API Key","type":"apiKey","data":{}}',
+    params: {
+      name: 'String name',
+      type: 'String type (e.g., apiKey, slackOAuth2)',
+      data: 'Object with credential fields (optional)',
+      nodesAccess: 'Optional array of { nodeType }'
+    }
+  },
+  n8n_update_credential: {
+    description: 'Update credential. Example: {"id":"abc","name":"New Name"}',
+    params: {
+      id: 'String credential ID',
+      name: 'Optional string',
+      type: 'Optional string',
+      data: 'Optional object',
+      nodesAccess: 'Optional array'
+    }
+  },
+  n8n_delete_credential: {
+    description: 'Delete credential. Example: {"id":"abc"}',
+    params: { id: 'String credential ID' }
+  },
+
+  // Tags (Pro/Enterprise)
+  n8n_list_tags: {
+    description: 'List tags (Pro). Example: {"limit": 50}',
+    params: { limit: 'Optional number', cursor: 'Optional string', withUsageCount: 'Optional boolean' }
+  },
+  n8n_create_tag: {
+    description: 'Create tag (Pro). Example: {"name": "high-priority"}',
+    params: { name: 'String tag name' }
+  },
+  n8n_update_tag: {
+    description: 'Update tag (Pro). Example: {"id":"t1","name":"urgent"}',
+    params: { id: 'String tag ID', name: 'String new name' }
+  },
+  n8n_delete_tag: {
+    description: 'Delete tag (Pro). Example: {"id":"t1"}',
+    params: { id: 'String tag ID' }
+  },
+
+  // Variables (Pro/Enterprise)
+  n8n_list_variables: {
+    description: 'List variables (Pro).',
+    params: {}
+  },
+  n8n_create_variable: {
+    description: 'Create variable (Pro). Example: {"key":"ENV","value":"prod"}',
+    params: { key: 'String key', value: 'String value' }
+  },
+  n8n_update_variable: {
+    description: 'Update variable (Pro). Example: {"id":"v1","value":"staging"}',
+    params: { id: 'String variable ID', value: 'String new value' }
+  },
+  n8n_delete_variable: {
+    description: 'Delete variable (Pro). Example: {"id":"v1"}',
+    params: { id: 'String variable ID' }
+  },
+
+  // Source Control (Pro/Enterprise)
+  n8n_source_control_status: {
+    description: 'Get source control status (Pro).',
+    params: {}
+  },
+  n8n_source_control_pull: {
+    description: 'Pull from remote (Pro). Example: {"force": true}',
+    params: { force: 'Optional boolean' }
+  },
+  n8n_source_control_push: {
+    description: 'Push to remote (Pro). Example: {"message": "Update"}',
+    params: { message: 'String commit message', fileNames: 'Optional array of strings' }
+  },
   
   validate_workflow_connections: {
     description: 'Validate workflow connections only. Pass workflow object. Example: {"workflow": {"nodes": [...], "connections": {}}}',
@@ -111,7 +207,7 @@ export const n8nFriendlyDescriptions: Record<string, {
   
   // Template tools
   search_templates: {
-    description: 'Search workflow templates. Pass query (string). Example: {"query": "chatbot"}',
+    description: 'Search workflow templates. Pass query (string). Optional: limit (number). Example: {"query": "chatbot"}',
     params: {
       query: 'String keyword like "chatbot" or "webhook"',
       limit: 'Optional number, default 20'
@@ -129,7 +225,7 @@ export const n8nFriendlyDescriptions: Record<string, {
   tools_documentation: {
     description: 'Get tool docs. Pass optional depth (string). Example: {"depth": "essentials"} or {}',
     params: {
-      depth: 'Optional string: "essentials" or "overview" or "detailed"',
+      depth: 'Optional string: "essentials" or "full"',
       topic: 'Optional string topic name'
     }
   }

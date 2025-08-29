@@ -28,7 +28,7 @@ export const n8nDocumentationToolsFinal: ToolDefinition[] = [
   },
   {
     name: 'list_nodes',
-    description: `List n8n nodes. Common: list_nodes({limit:200}) for all, list_nodes({category:'trigger'}) for triggers. Package: "n8n-nodes-base" or "@n8n/n8n-nodes-langchain". Categories: trigger/transform/output/input.`,
+    description: `List n8n nodes. Default limit is 50. Use list_nodes({limit:200}) for more. Category alias: 'AI' == isAITool=true. Package: "n8n-nodes-base" or "@n8n/n8n-nodes-langchain". Categories: trigger/transform/output/input/AI.`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -38,7 +38,7 @@ export const n8nDocumentationToolsFinal: ToolDefinition[] = [
         },
         category: {
           type: 'string',
-          description: 'trigger|transform|output|input|AI',
+          description: 'trigger|transform|output|input|AI (AI == isAITool=true)',
         },
         developmentStyle: {
           type: 'string',
@@ -51,7 +51,7 @@ export const n8nDocumentationToolsFinal: ToolDefinition[] = [
         },
         limit: {
           type: 'number',
-          description: 'Max results (default 50, use 200+ for all)',
+          description: 'Max results (default 50)',
           default: 50,
         },
       },

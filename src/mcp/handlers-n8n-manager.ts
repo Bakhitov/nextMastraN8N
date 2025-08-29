@@ -24,6 +24,7 @@ import { z } from 'zod';
 import { WorkflowValidator } from '../services/workflow-validator';
 import { EnhancedConfigValidator } from '../services/enhanced-config-validator';
 import { NodeRepository } from '../database/node-repository';
+import { Credential, Tag, Variable } from '../types/n8n-api';
 
 // Singleton n8n API client instance
 let apiClient: N8nApiClient | null = null;
@@ -739,6 +740,235 @@ export async function handleListExecutions(args: unknown): Promise<McpToolRespon
   }
 }
 
+// Workflow Activation/Deactivation
+export async function handleSetWorkflowActive(args: unknown): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const { id, active } = z.object({ id: z.string(), active: z.boolean() }).parse(args);
+    const result = await client.setWorkflowActive(id, active);
+    return {
+      success: true,
+      data: result,
+      message: `Workflow ${id} ${active ? 'activated' : 'deactivated'} successfully`
+    };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: 'Invalid input', details: { errors: error.errors } };
+    }
+    if (error instanceof N8nApiError) {
+      return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    }
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
+
+// Credentials
+export async function handleListCredentials(args: unknown): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const input = z.object({ limit: z.number().optional(), cursor: z.string().optional() }).optional().parse(args);
+    const res = await client.listCredentials({ limit: input?.limit, cursor: input?.cursor });
+    return { success: true, data: res };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { success: false, error: 'Invalid input', details: { errors: error.errors } };
+    if (error instanceof N8nApiError) return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
+
+export async function handleGetCredential(args: unknown): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const { id } = z.object({ id: z.string() }).parse(args);
+    const cred = await client.getCredential(id);
+    return { success: true, data: cred };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { success: false, error: 'Invalid input', details: { errors: error.errors } };
+    if (error instanceof N8nApiError) return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
+
+export async function handleCreateCredential(args: unknown): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const input = z.object({ name: z.string(), type: z.string(), data: z.record(z.unknown()).optional(), nodesAccess: z.array(z.object({ nodeType: z.string() })).optional() }).parse(args);
+    const created = await client.createCredential(input as Partial<Credential>);
+    return { success: true, data: created, message: `Credential "${created.name}" created` };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { success: false, error: 'Invalid input', details: { errors: error.errors } };
+    if (error instanceof N8nApiError) return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
+
+export async function handleUpdateCredential(args: unknown): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const { id, ...payload } = z.object({ id: z.string(), name: z.string().optional(), type: z.string().optional(), data: z.record(z.unknown()).optional(), nodesAccess: z.array(z.object({ nodeType: z.string() })).optional() }).parse(args);
+    const updated = await client.updateCredential(id, payload as Partial<Credential>);
+    return { success: true, data: updated, message: `Credential ${id} updated` };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { success: false, error: 'Invalid input', details: { errors: error.errors } };
+    if (error instanceof N8nApiError) return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
+
+export async function handleDeleteCredential(args: unknown): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const { id } = z.object({ id: z.string() }).parse(args);
+    await client.deleteCredential(id);
+    return { success: true, message: `Credential ${id} deleted` };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { success: false, error: 'Invalid input', details: { errors: error.errors } };
+    if (error instanceof N8nApiError) return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
+
+// Tags (Pro/Enterprise)
+export async function handleListTags(args: unknown): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const input = z.object({ limit: z.number().optional(), cursor: z.string().optional(), withUsageCount: z.boolean().optional() }).optional().parse(args);
+    const res = await client.listTags({ limit: input?.limit, cursor: input?.cursor, withUsageCount: input?.withUsageCount });
+    return { success: true, data: res };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { success: false, error: 'Invalid input', details: { errors: error.errors } };
+    if (error instanceof N8nApiError) return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
+
+export async function handleCreateTag(args: unknown): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const input = z.object({ name: z.string() }).parse(args);
+    const created = await client.createTag(input as Partial<Tag>);
+    return { success: true, data: created, message: `Tag "${created.name}" created` };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { success: false, error: 'Invalid input', details: { errors: error.errors } };
+    if (error instanceof N8nApiError) return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
+
+export async function handleUpdateTag(args: unknown): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const { id, name } = z.object({ id: z.string(), name: z.string() }).parse(args);
+    const updated = await client.updateTag(id, { name });
+    return { success: true, data: updated, message: `Tag ${id} updated` };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { success: false, error: 'Invalid input', details: { errors: error.errors } };
+    if (error instanceof N8nApiError) return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
+
+export async function handleDeleteTag(args: unknown): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const { id } = z.object({ id: z.string() }).parse(args);
+    await client.deleteTag(id);
+    return { success: true, message: `Tag ${id} deleted` };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { success: false, error: 'Invalid input', details: { errors: error.errors } };
+    if (error instanceof N8nApiError) return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
+
+// Variables (Pro/Enterprise)
+export async function handleListVariables(): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const vars = await client.getVariables();
+    return { success: true, data: vars };
+  } catch (error) {
+    if (error instanceof N8nApiError) return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
+
+export async function handleCreateVariable(args: unknown): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const input = z.object({ key: z.string(), value: z.string() }).parse(args);
+    const created = await client.createVariable(input as Partial<Variable>);
+    return { success: true, data: created, message: `Variable ${created.key} created` };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { success: false, error: 'Invalid input', details: { errors: error.errors } };
+    if (error instanceof N8nApiError) return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
+
+export async function handleUpdateVariable(args: unknown): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const { id, value } = z.object({ id: z.string(), value: z.string() }).parse(args);
+    const updated = await client.updateVariable(id, { value });
+    return { success: true, data: updated, message: `Variable ${id} updated` };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { success: false, error: 'Invalid input', details: { errors: error.errors } };
+    if (error instanceof N8nApiError) return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
+
+export async function handleDeleteVariable(args: unknown): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const { id } = z.object({ id: z.string() }).parse(args);
+    await client.deleteVariable(id);
+    return { success: true, message: `Variable ${id} deleted` };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { success: false, error: 'Invalid input', details: { errors: error.errors } };
+    if (error instanceof N8nApiError) return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
+
+// Source Control (Pro/Enterprise)
+export async function handleSourceControlStatus(): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const status = await client.getSourceControlStatus();
+    return { success: true, data: status };
+  } catch (error) {
+    if (error instanceof N8nApiError) return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
+
+export async function handleSourceControlPull(args: unknown): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const { force } = z.object({ force: z.boolean().optional() }).parse(args || {});
+    const result = await client.pullSourceControl(force ?? false);
+    return { success: true, data: result, message: 'Source control pull completed' };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { success: false, error: 'Invalid input', details: { errors: error.errors } };
+    if (error instanceof N8nApiError) return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
+
+export async function handleSourceControlPush(args: unknown): Promise<McpToolResponse> {
+  try {
+    const client = ensureApiConfigured();
+    const { message, fileNames } = z.object({ message: z.string(), fileNames: z.array(z.string()).optional() }).parse(args);
+    const result = await client.pushSourceControl(message, fileNames);
+    return { success: true, data: result, message: 'Source control push completed' };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { success: false, error: 'Invalid input', details: { errors: error.errors } };
+    if (error instanceof N8nApiError) return { success: false, error: getUserFriendlyErrorMessage(error), code: error.code };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
+  }
+}
 export async function handleDeleteExecution(args: unknown): Promise<McpToolResponse> {
   try {
     const client = ensureApiConfigured();
@@ -867,10 +1097,10 @@ export async function handleListAvailableTools(): Promise<McpToolResponse> {
         maxRetries: config.maxRetries
       } : null,
       limitations: [
-        'Cannot activate/deactivate workflows via API',
+        'Workflow activation may require specific n8n version',
         'Cannot execute workflows directly (must use webhooks)',
         'Cannot stop running executions',
-        'Tags and credentials have limited API support'
+        'Source Control and Variables are Pro/Enterprise features'
       ]
     }
   };
@@ -913,7 +1143,7 @@ export async function handleDiagnostic(request: any): Promise<McpToolResponse> {
   
   // Check which tools are available
   const documentationTools = 22; // Base documentation tools
-  const managementTools = apiConfigured ? 16 : 0;
+  const managementTools = apiConfigured ? 16 : 0; // updated elsewhere when adding tools
   const totalTools = documentationTools + managementTools;
   
   // Build diagnostic report
